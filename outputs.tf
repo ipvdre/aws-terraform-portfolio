@@ -70,7 +70,7 @@ output "private_nacl_id" {
 # VPN
 output "customer_gateway_id" {
   description = "ID of the customer gateway"
-  value       = aws_customer_gateway.home.id
+  value       = aws_customer_gateway.onprem.id
 }
 
 output "vpn_gateway_id" {
@@ -80,28 +80,28 @@ output "vpn_gateway_id" {
 
 output "vpn_connection_id" {
   description = "ID of the VPN connection"
-  value       = aws_vpn_connection.home.id
+  value       = aws_vpn_connection.onprem.id
 }
 
 output "vpn_tunnel1_address" {
   description = "Public IP of VPN tunnel 1"
-  value       = aws_vpn_connection.home.tunnel1_address
+  value       = aws_vpn_connection.onprem.tunnel1_address
 }
 
 output "vpn_tunnel2_address" {
   description = "Public IP of VPN tunnel 2"
-  value       = aws_vpn_connection.home.tunnel2_address
+  value       = aws_vpn_connection.onprem.tunnel2_address
 }
 
 output "vpn_tunnel1_preshared_key" {
   description = "Pre-shared key for VPN tunnel 1"
-  value       = aws_vpn_connection.home.tunnel1_preshared_key
+  value       = aws_vpn_connection.onprem.tunnel1_preshared_key
   sensitive   = true
 }
 
 output "vpn_tunnel2_preshared_key" {
   description = "Pre-shared key for VPN tunnel 2"
-  value       = aws_vpn_connection.home.tunnel2_preshared_key
+  value       = aws_vpn_connection.onprem.tunnel2_preshared_key
   sensitive   = true
 }
 

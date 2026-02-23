@@ -22,7 +22,7 @@ resource "aws_network_acl_rule" "public-allow-icmp-inbound" {
     icmp_code      = -1
     icmp_type      = -1
     egress         = false
-    cidr_block     = var.home_subnet_cidr
+    cidr_block     = var.onprem_subnet_cidr
 }
 resource "aws_network_acl_rule" "public-allow-ssh-inbound" {
     network_acl_id = aws_network_acl.public.id
@@ -32,7 +32,7 @@ resource "aws_network_acl_rule" "public-allow-ssh-inbound" {
     from_port      = 22
     to_port        = 22
     egress         = false
-    cidr_block     = var.home_subnet_cidr
+    cidr_block     = var.onprem_subnet_cidr
 }
 resource "aws_network_acl_rule" "public-allow-ephemeral-inbound" {
     network_acl_id = aws_network_acl.public.id
@@ -54,7 +54,7 @@ resource "aws_network_acl_rule" "public-allow-icmp-outbound" {
     icmp_code      = -1
     icmp_type      = -1
     egress         = true
-    cidr_block     = var.home_subnet_cidr
+    cidr_block     = var.onprem_subnet_cidr
 }
 resource "aws_network_acl_rule" "public-allow-http-outbound" {
     network_acl_id = aws_network_acl.public.id
@@ -111,7 +111,7 @@ resource "aws_network_acl_rule" "private-allow-icmp-inbound" {
     icmp_code      = -1
     icmp_type      = -1
     egress         = false
-    cidr_block     = var.home_subnet_cidr
+    cidr_block     = var.onprem_subnet_cidr
 }
 resource "aws_network_acl_rule" "private-allow-ssh-inbound" {
     network_acl_id = aws_network_acl.private.id
@@ -121,7 +121,7 @@ resource "aws_network_acl_rule" "private-allow-ssh-inbound" {
     from_port      = 22
     to_port        = 22
     egress         = false
-    cidr_block     = var.home_subnet_cidr
+    cidr_block     = var.onprem_subnet_cidr
 }
 resource "aws_network_acl_rule" "private-allow-ephemeral-inbound" {
     network_acl_id = aws_network_acl.private.id
@@ -143,7 +143,7 @@ resource "aws_network_acl_rule" "private-allow-icmp-outbound" {
     icmp_code      = -1
     icmp_type      = -1
     egress         = true
-    cidr_block     = var.home_subnet_cidr
+    cidr_block     = var.onprem_subnet_cidr
 }
 resource "aws_network_acl_rule" "private-allow-http-outbound" {
     network_acl_id = aws_network_acl.private.id
@@ -193,7 +193,7 @@ resource "aws_security_group_rule" "allow-ICMP-inbound" {
     from_port         = -1
     to_port           = -1
     protocol          = "icmp"
-    cidr_blocks       = [var.home_subnet_cidr]
+    cidr_blocks       = [var.onprem_subnet_cidr]
     security_group_id = aws_security_group.security-group1.id
 }
 resource "aws_security_group_rule" "allow-ICMP-outbound" {
@@ -201,7 +201,7 @@ resource "aws_security_group_rule" "allow-ICMP-outbound" {
     from_port         = -1
     to_port           = -1
     protocol          = "icmp"
-    cidr_blocks       = [var.home_subnet_cidr]
+    cidr_blocks       = [var.onprem_subnet_cidr]
     security_group_id = aws_security_group.security-group1.id
 }
 resource "aws_security_group_rule" "allow-SSH-inbound" {
@@ -209,7 +209,7 @@ resource "aws_security_group_rule" "allow-SSH-inbound" {
     from_port         = 22
     to_port           = 22
     protocol          = "tcp"
-    cidr_blocks       = [var.home_subnet_cidr]
+    cidr_blocks       = [var.onprem_subnet_cidr]
     security_group_id = aws_security_group.security-group1.id
 }
 resource "aws_security_group_rule" "allow-HTTPS-outbound" {

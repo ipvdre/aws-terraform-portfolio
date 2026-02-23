@@ -40,13 +40,13 @@ variable "instance_type" {
   default     = "t3.micro"
 }
 
-variable "home_public_ip" {
-  description = "Your home public IP for Customer Gateway"
+variable "onprem_public_ip" {
+  description = "Your on-prem public IP for Customer Gateway"
   type        = string
 }
 
-variable "home_subnet_cidr" {
-  description = "Your home network CIDR block"
+variable "onprem_subnet_cidr" {
+  description = "Your on-prem network CIDR block"
   type        = string
   default     = "192.168.1.0/24"
 }

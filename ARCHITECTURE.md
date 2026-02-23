@@ -53,11 +53,11 @@
                                   │
                         ┌─────────┴────────┐
                         │ Customer Gateway │
-                        │  (home router)   │
+                        │ (on-prem router) │
                         └─────────┬────────┘
                                   │
                         ┌─────────┴────────┐
-                        │  Home Network    │
+                        │ On-Prem Network  │
                         │ (192.168.1.0/24)  │
                         └──────────────────┘
 
@@ -66,8 +66,8 @@
                     │  (http://127.0.0.1:8200)  │
                     │                           │
                     │  secret/vpn-lab:          │
-                    │   ├─ home_public_ip       │
-                    │   └─ home_subnet_cidr     │
+                    │   ├─ onprem_public_ip     │
+                    │   └─ onprem_subnet_cidr   │
                     └──────────────────────────┘
                           │
                           │ Terraform reads
@@ -98,8 +98,8 @@
 
 | Resource | Purpose |
 |---|---|
-| **Instance1** (public subnet) | Amazon Linux 2 instance in the public subnet. Reachable from home via VPN. |
-| **Instance2** (private subnet) | Amazon Linux 2 instance in the private subnet. Reachable from home via VPN. Uses NAT gateway for outbound internet. |
+| **Instance1** (public subnet) | Amazon Linux 2 instance in the public subnet. Reachable from on-prem via VPN. |
+| **Instance2** (private subnet) | Amazon Linux 2 instance in the private subnet. Reachable from on-prem via VPN. Uses NAT gateway for outbound internet. |
 
 Both instances use the `amzn2-ami-hvm` AMI (latest Amazon Linux 2) and are `t3.micro` type.
 
@@ -113,10 +113,10 @@ NACLs are **stateless** — you must explicitly allow both inbound and outbound 
 
 | Direction | Rule # | Protocol | Ports | Source/Dest | Purpose |
 |---|---|---|---|---|---|
-| Inbound | 100 | ICMP | all | Home CIDR | Ping from home |
-| Inbound | 110 | TCP | 22 | Home CIDR | SSH from home |
+| Inbound | 100 | ICMP | all | On-Prem CIDR | Ping from on-prem |
+| Inbound | 110 | TCP | 22 | On-Prem CIDR | SSH from on-prem |
 | Inbound | 200 | TCP | 1024-65535 | 0.0.0.0/0 | Return traffic for outbound connections |
-| Outbound | 100 | ICMP | all | Home CIDR | Ping replies to home |
+| Outbound | 100 | ICMP | all | On-Prem CIDR | Ping replies to on-prem |
 | Outbound | 110 | TCP | 80 | 0.0.0.0/0 | HTTP to internet |
 | Outbound | 120 | TCP | 443 | 0.0.0.0/0 | HTTPS to internet |
 | Outbound | 200 | TCP | 1024-65535 | 0.0.0.0/0 | Return traffic for inbound connections (SSH replies) |
@@ -125,10 +125,10 @@ NACLs are **stateless** — you must explicitly allow both inbound and outbound 
 
 | Direction | Rule # | Protocol | Ports | Source/Dest | Purpose |
 |---|---|---|---|---|---|
-| Inbound | 100 | ICMP | all | Home CIDR | Ping from home via VPN |
-| Inbound | 110 | TCP | 22 | Home CIDR | SSH from home via VPN |
+| Inbound | 100 | ICMP | all | On-Prem CIDR | Ping from on-prem via VPN |
+| Inbound | 110 | TCP | 22 | On-Prem CIDR | SSH from on-prem via VPN |
 | Inbound | 200 | TCP | 1024-65535 | 0.0.0.0/0 | Return traffic from NAT gateway |
-| Outbound | 100 | ICMP | all | Home CIDR | Ping replies to home |
+| Outbound | 100 | ICMP | all | On-Prem CIDR | Ping replies to on-prem |
 | Outbound | 110 | TCP | 80 | 0.0.0.0/0 | HTTP via NAT gateway |
 | Outbound | 120 | TCP | 443 | 0.0.0.0/0 | HTTPS via NAT gateway |
 | Outbound | 200 | TCP | 1024-65535 | 0.0.0.0/0 | Return traffic for inbound connections |
@@ -139,9 +139,9 @@ Security groups are **stateful** — return traffic is automatically allowed, so
 
 | Direction | Protocol | Ports | Source/Dest | Purpose |
 |---|---|---|---|---|
-| Ingress | ICMP | all | Home CIDR | Ping from home |
-| Egress | ICMP | all | Home CIDR | Ping to home |
-| Ingress | TCP | 22 | Home CIDR | SSH from home |
+| Ingress | ICMP | all | On-Prem CIDR | Ping from on-prem |
+| Egress | ICMP | all | On-Prem CIDR | Ping to on-prem |
+| Ingress | TCP | 22 | On-Prem CIDR | SSH from on-prem |
 | Egress | TCP | 80 | 0.0.0.0/0 | HTTP to internet (package updates) |
 | Egress | TCP | 443 | 0.0.0.0/0 | HTTPS to internet (package updates) |
 
@@ -149,11 +149,11 @@ Security groups are **stateful** — return traffic is automatically allowed, so
 
 | Resource | Purpose |
 |---|---|
-| **Customer Gateway** | Represents your home router/firewall. Configured with your home public IP and IPsec type. |
-| **VPN Gateway** | AWS-side endpoint attached to the VPC. Enables encrypted communication between AWS and your home network. |
+| **Customer Gateway** | Represents your on-prem router/firewall. Configured with your on-prem public IP and IPsec type. |
+| **VPN Gateway** | AWS-side endpoint attached to the VPC. Enables encrypted communication between AWS and your on-prem network. |
 | **VPN Connection** | The IPsec tunnel configuration connecting the customer gateway to the VPN gateway. Uses static routing (no BGP). Two tunnels for redundancy, each with configurable pre-shared keys and IKE/phase parameters. |
-| **VPN Connection Route** | Tells AWS that traffic destined for your home network CIDR should go through the VPN connection. |
-| **Route Propagation** (x2) | Automatically adds VPN routes to both the public and private route tables, so both subnets can reach your home network. |
+| **VPN Connection Route** | Tells AWS that traffic destined for your on-prem network CIDR should go through the VPN connection. |
+| **Route Propagation** (x2) | Automatically adds VPN routes to both the public and private route tables, so both subnets can reach your on-prem network. |
 
 ### Secrets Management (`vault.tf`)
 
@@ -165,23 +165,23 @@ Security groups are **stateful** — return traffic is automatically allowed, so
 
 | Key | Description |
 |---|---|
-| `home_public_ip` | Your home router's public IP (used by the Customer Gateway) |
-| `home_subnet_cidr` | Your home network CIDR block (used in NACLs, SG rules, VPN routes) |
+| `onprem_public_ip` | Your on-prem router's public IP (used by the Customer Gateway) |
+| `onprem_subnet_cidr` | Your on-prem network CIDR block (used in NACLs, SG rules, VPN routes) |
 
-**Design principle:** Vault flows one direction — **Vault → Terraform**. Secrets that exist before Terraform runs (your home IP, network CIDR) belong in Vault. Secrets that Terraform generates during a run (PSKs, tunnel IPs) belong in Terraform state. Writing generated outputs back into Vault doubles state exposure without adding security.
+**Design principle:** Vault flows one direction — **Vault → Terraform**. Secrets that exist before Terraform runs (your on-prem IP, network CIDR) belong in Vault. Secrets that Terraform generates during a run (PSKs, tunnel IPs) belong in Terraform state. Writing generated outputs back into Vault doubles state exposure without adding security.
 
 **Authentication:** The Vault provider authenticates using a token passed via `var.vault_token` (stored in `terraform.tfvars`, which is git-ignored). Vault runs locally at `http://127.0.0.1:8200`.
 
 ## Traffic Flows
 
-### Home → Instance1 (public subnet)
+### On-Prem → Instance1 (public subnet)
 ```
-Home PC → VPN Tunnel → VPN Gateway → Public Route Table → Public Subnet → Instance1
+On-Prem Client → VPN Tunnel → VPN Gateway → Public Route Table → Public Subnet → Instance1
 ```
 
-### Home → Instance2 (private subnet)
+### On-Prem → Instance2 (private subnet)
 ```
-Home PC → VPN Tunnel → VPN Gateway → Private Route Table → Private Subnet → Instance2
+On-Prem Client → VPN Tunnel → VPN Gateway → Private Route Table → Private Subnet → Instance2
 ```
 
 ### Instance2 → Internet (e.g., yum update)
