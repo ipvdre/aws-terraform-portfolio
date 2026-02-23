@@ -104,3 +104,14 @@ output "vpn_tunnel2_preshared_key" {
   value       = aws_vpn_connection.home.tunnel2_preshared_key
   sensitive   = true
 }
+
+# SSH
+output "ssh_command_instance1" {
+  description = "SSH command for instance 1 (public subnet)"
+  value       = "ssh -i ~/.ssh/aws-vpn-lab ec2-user@${aws_instance.instance1.private_ip}"
+}
+
+output "ssh_command_instance2" {
+  description = "SSH command for instance 2 (private subnet)"
+  value       = "ssh -i ~/.ssh/aws-vpn-lab ec2-user@${aws_instance.instance2.private_ip}"
+}

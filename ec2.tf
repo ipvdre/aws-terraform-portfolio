@@ -11,11 +11,17 @@ data "aws_ami" "amazon-linux-2" {
     owners = ["amazon"]
 }
 
+resource "aws_key_pair" "vpn-lab" {
+    key_name   = "aws-vpn-lab"
+    public_key = file(var.ssh_public_key_path)
+}
+
 resource "aws_instance" "instance1" {
     ami = data.aws_ami.amazon-linux-2.id
     instance_type = var.instance_type
     subnet_id = aws_subnet.public.id
     vpc_security_group_ids = [aws_security_group.security-group1.id]
+    key_name = aws_key_pair.vpn-lab.key_name
 
     tags = {
         Name = var.instance1_name
@@ -26,6 +32,7 @@ resource "aws_instance" "instance2" {
     instance_type = var.instance_type
     subnet_id = aws_subnet.private.id
     vpc_security_group_ids = [aws_security_group.security-group1.id]
+    key_name = aws_key_pair.vpn-lab.key_name
     tags = {
         Name = var.instance2_name
     }
