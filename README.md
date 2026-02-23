@@ -1,6 +1,8 @@
 # AWS VPC + Site-to-Site VPN — Terraform
 
-A private AWS VPC connected to a home network via IPsec Site-to-Site VPN.  
+> **Disclaimer:** This project is provided as-is for educational and portfolio purposes. All IP addresses, CIDRs, and credentials shown are dummy/example values. If you choose to deploy this infrastructure, you do so **at your own risk**. You are responsible for any AWS charges incurred, securing your own credentials, and understanding the resources being created. Review all code and cost estimates before running `terraform apply`.
+
+A private AWS VPC connected to a home network via IPsec Site-to-Site VPN.
 All infrastructure provisioned with Terraform. No manual console clicks.
 
 ---
@@ -57,7 +59,7 @@ All infrastructure provisioned with Terraform. No manual console clicks.
                              │
                    ┌─────────┴────────┐
                    │  Home Network    │
-                   │  10.8.0.0/24     │
+                   │  192.168.1.0/24     │
                    └──────────────────┘
 ```
 
@@ -111,7 +113,7 @@ Before running Terraform, you need:
 2. **Terraform >= 1.5.0** installed
 3. **HashiCorp Vault** running locally with KV v2 engine enabled at `secret/`
 4. **Your home public IP** — run `curl ifconfig.me` from your home network
-5. **Your home subnet CIDR** — the network behind your router (e.g. `10.8.0.0/24`)
+5. **Your home subnet CIDR** — the network behind your router (e.g. `192.168.1.0/24`)
 
 ---
 
@@ -139,7 +141,7 @@ subnet_cidr_a    = "10.10.10.0/24"
 subnet_cidr_b    = "10.10.20.0/24"
 instance_type    = "t3.micro"
 home_public_ip   = "YOUR.HOME.PUBLIC.IP"
-home_subnet_cidr = "10.8.0.0/24"
+home_subnet_cidr = "192.168.1.0/24"
 
 availability_zone_a = "us-east-1a"
 availability_zone_b = "us-east-1b"
@@ -200,7 +202,7 @@ Using the tunnel IPs and PSKs from Step 5, configure two IPsec peers on your Edg
 | Hash | SHA1 | SHA1 |
 | DH Group | 14 | 14 |
 | Pre-shared secret | `<tunnel1_psk>` | `<tunnel2_psk>` |
-| Local subnet | `10.8.0.0/24` | `10.8.0.0/24` |
+| Local subnet | `192.168.1.0/24` | `192.168.1.0/24` |
 | Remote subnet | `10.10.0.0/16` | `10.10.0.0/16` |
 
 > If your EdgeRouter 4 WAN interface is behind a modem performing NAT (double NAT), forward UDP 500 and UDP 4500 from the modem to the ER4 WAN interface IP. Use the ER4 LAN-side IP as the Local IP in the peer config, not the public IP.
@@ -290,6 +292,17 @@ terraform destroy
 | Domain 4 — Communication & Network Security | IPsec tunnel mode, IKE Phase 1/2, AES-256, DH key exchange, NAT traversal, HA dual-tunnel VPN |
 | Domain 2 — Asset Security | State file protection via gitignore, PSK confidentiality via sensitive outputs, sensitive inputs sourced from HashiCorp Vault |
 | Domain 5 — Identity & Access Management | AWS SSO authentication, least privilege IAM, no static credentials in code |
+
+---
+
+## Disclaimer
+
+This repository is for **educational and demonstration purposes only**. It is not intended for production use.
+
+- All IP addresses, CIDR blocks, and credentials in this repo are **dummy/example values**. Replace them with your own before deploying.
+- Deploying this infrastructure **will incur AWS charges**. See the cost estimate above and destroy resources when not in use.
+- The author assumes **no liability** for costs, data loss, security incidents, or any other damages resulting from the use of this code.
+- **Use at your own risk.** You are solely responsible for reviewing, understanding, and securing any infrastructure you deploy.
 
 ---
 

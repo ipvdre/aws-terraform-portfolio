@@ -48,7 +48,7 @@ variable "home_public_ip" {
 variable "home_subnet_cidr" {
   description = "Your home network CIDR block"
   type        = string
-  default     = "10.8.0.0/24"
+  default     = "192.168.1.0/24"
 }
 
 variable "security_group_name" {

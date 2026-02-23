@@ -58,7 +58,7 @@
                                   │
                         ┌─────────┴────────┐
                         │  Home Network    │
-                        │  (10.8.0.0/24)   │
+                        │ (192.168.1.0/24)  │
                         └──────────────────┘
 
                     ┌──────────────────────────┐
@@ -152,7 +152,7 @@ Security groups are **stateful** — return traffic is automatically allowed, so
 | **Customer Gateway** | Represents your home router/firewall. Configured with your home public IP and IPsec type. |
 | **VPN Gateway** | AWS-side endpoint attached to the VPC. Enables encrypted communication between AWS and your home network. |
 | **VPN Connection** | The IPsec tunnel configuration connecting the customer gateway to the VPN gateway. Uses static routing (no BGP). Two tunnels for redundancy, each with configurable pre-shared keys and IKE/phase parameters. |
-| **VPN Connection Route** | Tells AWS that traffic destined for `10.8.0.0/24` (home network) should go through the VPN connection. |
+| **VPN Connection Route** | Tells AWS that traffic destined for your home network CIDR should go through the VPN connection. |
 | **Route Propagation** (x2) | Automatically adds VPN routes to both the public and private route tables, so both subnets can reach your home network. |
 
 ### Secrets Management (`vault.tf`)
