@@ -34,6 +34,9 @@ resource "aws_network_acl_rule" "public-allow-ssh-inbound" {
     egress         = false
     cidr_block     = var.onprem_subnet_cidr
 }
+# Return traffic from internet (HTTP/HTTPS responses) requires ephemeral ports.
+# NACLs are stateless, so this rule is necessary for outbound-initiated connections.
+# The security group (stateful) provides the actual inbound filtering.
 resource "aws_network_acl_rule" "public-allow-ephemeral-inbound" {
     network_acl_id = aws_network_acl.public.id
     rule_number    = 200
@@ -123,7 +126,9 @@ resource "aws_network_acl_rule" "private-allow-ssh-inbound" {
     egress         = false
     cidr_block     = var.onprem_subnet_cidr
 }
-resource "aws_network_acl_rule" "private-allow-ephemeral-inbound" {
+# Private subnet return traffic only comes from within VPC (via NAT gateway)
+# or from on-prem (via VPN gateway) — no need for 0.0.0.0/0.
+resource "aws_network_acl_rule" "private-allow-ephemeral-inbound-vpc" {
     network_acl_id = aws_network_acl.private.id
     rule_number    = 200
     protocol       = "tcp"
@@ -131,7 +136,17 @@ resource "aws_network_acl_rule" "private-allow-ephemeral-inbound" {
     from_port      = 1024
     to_port        = 65535
     egress         = false
-    cidr_block     = "0.0.0.0/0"
+    cidr_block     = var.vpc_cidr_block
+}
+resource "aws_network_acl_rule" "private-allow-ephemeral-inbound-onprem" {
+    network_acl_id = aws_network_acl.private.id
+    rule_number    = 210
+    protocol       = "tcp"
+    rule_action    = "allow"
+    from_port      = 1024
+    to_port        = 65535
+    egress         = false
+    cidr_block     = var.onprem_subnet_cidr
 }
 
 # --- Outbound Rules ---

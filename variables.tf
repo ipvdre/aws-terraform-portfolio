@@ -8,18 +8,33 @@ variable "vpc_cidr_block" {
   description = "CIDR block for the VPC"
   type        = string
   default     = "10.10.0.0/16"
+
+  validation {
+    condition     = can(cidrhost(var.vpc_cidr_block, 0))
+    error_message = "Must be a valid CIDR block (e.g. 10.10.0.0/16)."
+  }
 }
 
 variable "subnet_cidr_a" {
   description = "CIDR block for subnet A"
   type        = string
   default     = "10.10.10.0/24"
+
+  validation {
+    condition     = can(cidrhost(var.subnet_cidr_a, 0))
+    error_message = "Must be a valid CIDR block (e.g. 10.10.10.0/24)."
+  }
 }
 
 variable "subnet_cidr_b" {
   description = "CIDR block for subnet B"
   type        = string
   default     = "10.10.20.0/24"
+
+  validation {
+    condition     = can(cidrhost(var.subnet_cidr_b, 0))
+    error_message = "Must be a valid CIDR block (e.g. 10.10.20.0/24)."
+  }
 }
 
 variable "availability_zone_a" {
@@ -43,12 +58,22 @@ variable "instance_type" {
 variable "onprem_public_ip" {
   description = "Your on-prem public IP for Customer Gateway"
   type        = string
+
+  validation {
+    condition     = can(regex("^(\\d{1,3}\\.){3}\\d{1,3}$", var.onprem_public_ip))
+    error_message = "Must be a valid IPv4 address (e.g. 203.0.113.10)."
+  }
 }
 
 variable "onprem_subnet_cidr" {
   description = "Your on-prem network CIDR block"
   type        = string
   default     = "192.168.1.0/24"
+
+  validation {
+    condition     = can(cidrhost(var.onprem_subnet_cidr, 0))
+    error_message = "Must be a valid CIDR block (e.g. 192.168.1.0/24)."
+  }
 }
 
 variable "security_group_name" {
@@ -87,4 +112,16 @@ variable "vpn_tunnel2_psk" {
   type        = string
   sensitive   = true
   default     = null
+}
+
+variable "vault_token" {
+  description = "Vault token for authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "vault_address" {
+  description = "Address of the HashiCorp Vault server"
+  type        = string
+  default     = "https://127.0.0.1:8200"
 }

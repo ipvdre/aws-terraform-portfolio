@@ -14,6 +14,10 @@ resource "aws_vpn_gateway" "main" {
     tags = {
         Name = "main-vpn-gateway"
     }
+
+    lifecycle {
+        prevent_destroy = true
+    }
 }
 
 resource "aws_vpn_connection" "onprem" {
@@ -25,19 +29,19 @@ resource "aws_vpn_connection" "onprem" {
   tunnel1_preshared_key            = var.vpn_tunnel1_psk
   tunnel1_ike_versions             = ["ikev1", "ikev2"]
   tunnel1_phase1_encryption_algorithms = ["AES256"]
-  tunnel1_phase1_integrity_algorithms  = ["SHA1"]
+  tunnel1_phase1_integrity_algorithms  = ["SHA2-256"]
   tunnel1_phase1_dh_group_numbers      = [14]
   tunnel1_phase2_encryption_algorithms = ["AES256"]
-  tunnel1_phase2_integrity_algorithms  = ["SHA1"]
+  tunnel1_phase2_integrity_algorithms  = ["SHA2-256"]
   tunnel1_phase2_dh_group_numbers      = [14]
 
   tunnel2_preshared_key            = var.vpn_tunnel2_psk
   tunnel2_ike_versions             = ["ikev1", "ikev2"]
   tunnel2_phase1_encryption_algorithms = ["AES256"]
-  tunnel2_phase1_integrity_algorithms  = ["SHA1"]
+  tunnel2_phase1_integrity_algorithms  = ["SHA2-256"]
   tunnel2_phase1_dh_group_numbers      = [14]
   tunnel2_phase2_encryption_algorithms = ["AES256"]
-  tunnel2_phase2_integrity_algorithms  = ["SHA1"]
+  tunnel2_phase2_integrity_algorithms  = ["SHA2-256"]
   tunnel2_phase2_dh_group_numbers      = [14]
 
   tags = {

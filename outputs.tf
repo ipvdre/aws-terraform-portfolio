@@ -115,3 +115,21 @@ output "ssh_command_instance2" {
   description = "SSH command for instance 2 (private subnet)"
   value       = "ssh -i ~/.ssh/aws-vpn-lab ec2-user@${aws_instance.instance2.private_ip}"
 }
+
+# Vault
+output "vault_secret_keys" {
+  description = "Available keys in the Vault vpn-lab secret (for verification)"
+  value       = keys(data.vault_kv_secret_v2.vpn_secrets.data)
+  sensitive   = true
+}
+
+# Logging
+output "vpc_flow_log_id" {
+  description = "ID of the VPC Flow Log"
+  value       = aws_flow_log.vpc.id
+}
+
+output "cloudtrail_arn" {
+  description = "ARN of the CloudTrail trail"
+  value       = aws_cloudtrail.main.arn
+}

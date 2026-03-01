@@ -13,9 +13,16 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+
+  default_tags {
+    tags = {
+      Project   = "aws-vpn-lab"
+      ManagedBy = "terraform"
+    }
+  }
 }
 
 provider "vault" {
-  address = "http://127.0.0.1:8200"
+  address = var.vault_address
   token   = var.vault_token
 }

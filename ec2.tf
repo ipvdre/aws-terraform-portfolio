@@ -23,6 +23,15 @@ resource "aws_instance" "instance1" {
     vpc_security_group_ids = [aws_security_group.security-group1.id]
     key_name = aws_key_pair.vpn-lab.key_name
 
+    root_block_device {
+        encrypted = true
+    }
+
+    metadata_options {
+        http_tokens   = "required"
+        http_endpoint = "enabled"
+    }
+
     tags = {
         Name = var.instance1_name
     }
@@ -33,6 +42,16 @@ resource "aws_instance" "instance2" {
     subnet_id = aws_subnet.private.id
     vpc_security_group_ids = [aws_security_group.security-group1.id]
     key_name = aws_key_pair.vpn-lab.key_name
+
+    root_block_device {
+        encrypted = true
+    }
+
+    metadata_options {
+        http_tokens   = "required"
+        http_endpoint = "enabled"
+    }
+
     tags = {
         Name = var.instance2_name
     }
