@@ -63,7 +63,9 @@
 
                     ┌──────────────────────────┐
                     │  HashiCorp Vault          │
-                    │  (http://127.0.0.1:8200)  │
+                    │  (var.vault_address)      │
+                    │  default: https://        │
+                    │    127.0.0.1:8200         │
                     │                           │
                     │  secret/vpn-lab:          │
                     │   ├─ onprem_public_ip     │
@@ -77,6 +79,23 @@
                     │  Terraform            │
                     │  (vault data source)  │
                     └──────────────────────┘
+
+           ┌──────────────────────────────────────┐
+           │  Logging & Monitoring                 │
+           │                                       │
+           │  ┌────────────────────────────────┐   │
+           │  │  VPC Flow Logs → CloudWatch    │   │
+           │  │  (all traffic, 30-day retain)  │   │
+           │  └────────────────────────────────┘   │
+           │  ┌────────────────────────────────┐   │
+           │  │  CloudTrail → S3 (KMS enc.)    │   │
+           │  │  (API audit, file validation)  │   │
+           │  └────────────────────────────────┘   │
+           │  ┌────────────────────────────────┐   │
+           │  │  CloudWatch Alarms             │   │
+           │  │  Tunnel 1 + 2 state monitors   │   │
+           │  └────────────────────────────────┘   │
+           └──────────────────────────────────────┘
 ```
 
 ## Component Breakdown
@@ -103,6 +122,10 @@
 
 Both instances use the `amzn2-ami-hvm` AMI (latest Amazon Linux 2) and are `t3.micro` type.
 
+**Instance hardening:**
+- EBS root volumes encrypted at rest (`encrypted = true`)
+- IMDSv2 enforced (`http_tokens = "required"`) — blocks legacy IMDSv1 requests, mitigating SSRF-based credential theft from the instance metadata endpoint
+
 ### Security (`security.tf`)
 
 #### Network ACLs (Stateless)
@@ -115,7 +138,7 @@ NACLs are **stateless** — you must explicitly allow both inbound and outbound 
 |---|---|---|---|---|---|
 | Inbound | 100 | ICMP | all | On-Prem CIDR | Ping from on-prem |
 | Inbound | 110 | TCP | 22 | On-Prem CIDR | SSH from on-prem |
-| Inbound | 200 | TCP | 1024-65535 | 0.0.0.0/0 | Return traffic for outbound connections |
+| Inbound | 200 | TCP | 1024-65535 | 0.0.0.0/0 | Return traffic for outbound connections (internet responses require 0.0.0.0/0 — security group provides stateful filtering) |
 | Outbound | 100 | ICMP | all | On-Prem CIDR | Ping replies to on-prem |
 | Outbound | 110 | TCP | 80 | 0.0.0.0/0 | HTTP to internet |
 | Outbound | 120 | TCP | 443 | 0.0.0.0/0 | HTTPS to internet |
@@ -127,7 +150,8 @@ NACLs are **stateless** — you must explicitly allow both inbound and outbound 
 |---|---|---|---|---|---|
 | Inbound | 100 | ICMP | all | On-Prem CIDR | Ping from on-prem via VPN |
 | Inbound | 110 | TCP | 22 | On-Prem CIDR | SSH from on-prem via VPN |
-| Inbound | 200 | TCP | 1024-65535 | 0.0.0.0/0 | Return traffic from NAT gateway |
+| Inbound | 200 | TCP | 1024-65535 | VPC CIDR | Return traffic from NAT gateway (scoped to VPC, not 0.0.0.0/0) |
+| Inbound | 210 | TCP | 1024-65535 | On-Prem CIDR | Return traffic from on-prem via VPN |
 | Outbound | 100 | ICMP | all | On-Prem CIDR | Ping replies to on-prem |
 | Outbound | 110 | TCP | 80 | 0.0.0.0/0 | HTTP via NAT gateway |
 | Outbound | 120 | TCP | 443 | 0.0.0.0/0 | HTTPS via NAT gateway |
@@ -151,7 +175,7 @@ Security groups are **stateful** — return traffic is automatically allowed, so
 |---|---|
 | **Customer Gateway** | Represents your on-prem router/firewall. Configured with your on-prem public IP and IPsec type. |
 | **VPN Gateway** | AWS-side endpoint attached to the VPC. Enables encrypted communication between AWS and your on-prem network. |
-| **VPN Connection** | The IPsec tunnel configuration connecting the customer gateway to the VPN gateway. Uses static routing (no BGP). Two tunnels for redundancy, each with configurable pre-shared keys and IKE/phase parameters. |
+| **VPN Connection** | The IPsec tunnel configuration connecting the customer gateway to the VPN gateway. Uses static routing (no BGP). Two tunnels for redundancy. Crypto: AES-256 encryption, SHA2-256 integrity, DH Group 14. |
 | **VPN Connection Route** | Tells AWS that traffic destined for your on-prem network CIDR should go through the VPN connection. |
 | **Route Propagation** (x2) | Automatically adds VPN routes to both the public and private route tables, so both subnets can reach your on-prem network. |
 
@@ -170,7 +194,27 @@ Security groups are **stateful** — return traffic is automatically allowed, so
 
 **Design principle:** Vault flows one direction — **Vault → Terraform**. Secrets that exist before Terraform runs (your on-prem IP, network CIDR) belong in Vault. Secrets that Terraform generates during a run (PSKs, tunnel IPs) belong in Terraform state. Writing generated outputs back into Vault doubles state exposure without adding security.
 
-**Authentication:** The Vault provider authenticates using a token passed via `var.vault_token` (stored in `terraform.tfvars`, which is git-ignored). Vault runs locally at `http://127.0.0.1:8200`.
+**Authentication:** The Vault provider authenticates using a token passed via `var.vault_token` (stored in `terraform.tfvars`, which is git-ignored). Vault address is parameterized via `var.vault_address` (defaults to `https://127.0.0.1:8200`).
+
+### Logging & Monitoring (`logging.tf`)
+
+| Resource | Purpose |
+|---|---|
+| **CloudWatch Log Group** | Stores VPC Flow Log data with 30-day retention. |
+| **IAM Role + Policy** | Allows the VPC Flow Logs service to write to CloudWatch. Policy scoped to the specific log group ARN. |
+| **VPC Flow Log** | Captures all network traffic (ACCEPT + REJECT) across the VPC with 60-second aggregation. |
+| **S3 Bucket** (CloudTrail) | Stores CloudTrail logs. KMS-encrypted, versioning enabled, all public access blocked. |
+| **CloudTrail** | Logs all API activity in the account. Log file validation enabled to detect tampering. |
+| **CloudWatch Alarm — Tunnel 1** | Fires when VPN Tunnel 1 state drops below 1 (DOWN) for two consecutive 5-minute periods. |
+| **CloudWatch Alarm — Tunnel 2** | Fires when VPN Tunnel 2 state drops below 1 (DOWN) for two consecutive 5-minute periods. |
+
+### Resource Protection
+
+| Mechanism | Resources | Purpose |
+|---|---|---|
+| `lifecycle { prevent_destroy = true }` | VPC, VPN Gateway | Prevents accidental `terraform destroy` of critical infrastructure |
+| `default_tags` (provider-level) | All AWS resources | Automatically tags every resource with `Project = aws-vpn-lab` and `ManagedBy = terraform` |
+| Input validation | IP and CIDR variables | Rejects invalid values at `terraform plan` time before any resources are created |
 
 ## Traffic Flows
 
